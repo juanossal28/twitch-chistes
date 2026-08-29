@@ -1,0 +1,7 @@
+{
+  "name": "twitch-chistes",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy"
+  }
+}
