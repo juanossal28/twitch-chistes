@@ -24,8 +24,8 @@ export default {
       return getRandomJoke("malo");
     }
 
-    if (url.pathname === "/chiste/geek") {
-      return getRandomJoke("geek");
+    if (url.pathname === "/chiste/animales") {
+      return getRandomJoke("animales");
     }
 
     if (url.pathname === "/chiste/gaming") {
