@@ -1,12 +1,31 @@
-[
-  "¿Qué le dijo un techo a otro techo? Techo de menos.",
-  "¿Qué hace una abeja en el gimnasio? ¡Zum-ba!",
-  "¿Cuál es el café más peligroso? El ex-preso.",
-  "¿Por qué el libro de matemáticas estaba triste? Porque tenía muchos problemas.",
-  "¿Qué hace una computadora cuando tiene frío? Cierra Windows.",
-  "¿Qué le dijo una pared a otra pared? Nos vemos en la esquina.",
-  "¿Qué hace un pez? Nada.",
-  "¿Cuál es el animal más antiguo? La cebra, porque está en blanco y negro.",
-  "¿Cómo se despiden los químicos? Ácido un placer.",
-  "¿Qué le dijo un 0 a un 8? Bonito cinturón."
-]
+{
+  "normal": [
+    "¿Qué le dijo un techo a otro techo? Techo de menos.",
+    "¿Qué hace una abeja en el gimnasio? ¡Zum-ba!",
+    "¿Cuál es el café más peligroso? El ex-preso."
+  ],
+
+  "malo": [
+    "¿Qué hace una vaca cuando sale el sol? Sombra.",
+    "¿Qué le dijo un 0 a un 8? Bonito cinturón.",
+    "¿Cómo se llama un boomerang que no vuelve? Palo."
+  ],
+
+  "geek": [
+    "¿Cuántos programadores hacen falta para cambiar una bombilla? Ninguno, es un problema de hardware.",
+    "¿Por qué el programador confundió Halloween con Navidad? Porque OCT 31 == DEC 25.",
+    "Hay 10 tipos de personas: las que entienden binario y las que no."
+  ],
+
+  "gaming": [
+    "¿Por qué el jugador llevó una escalera al servidor? Porque quería subir de nivel.",
+    "Mi PC no tiene problemas de FPS... tiene problemas de FPM: frames por minuto.",
+    "¿Cuál es el juego favorito de los electricistas? Minecraft, por los creepers."
+  ],
+
+  "anime": [
+    "¿Cuál es el anime favorito de los programadores? Code Geass.",
+    "¿Por qué el protagonista de anime nunca llega tarde? Porque tiene plot armor.",
+    "¿Qué hace un personaje de anime cuando pierde? Grita su ataque especial."
+  ]
+}
