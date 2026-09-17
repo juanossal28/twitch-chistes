@@ -5,16 +5,10 @@ export default {
   async fetch(request) {
     const url = new URL(request.url);
 
-    // ------------------------------------------------------------
-    // /chiste
-    // ------------------------------------------------------------
     if (url.pathname === "/chiste") {
       return await getRandomJoke();
     }
 
-    // ------------------------------------------------------------
-    // Respuesta para rutas desconocidas
-    // ------------------------------------------------------------
     return new Response(
       "API de chistes de Twitch funcionando correctamente.",
       {
@@ -30,90 +24,77 @@ export default {
 
 async function getRandomJoke() {
   try {
-    // ------------------------------------------------------------
-    // Descargar chistes.json directamente desde GitHub
-    // ------------------------------------------------------------
-    const githubResponse = await fetch(JOKES_URL, {
-      method: "GET",
-      headers: {
-        "User-Agent": "Twitch-Jokes-Worker"
-      },
-      cf: {
-        cacheTtl: 0,
-        cacheEverything: false
-      }
-    });
+    // ============================================================
+    // Descargar SIEMPRE la versión actual del JSON.
+    // ============================================================
 
-    if (!githubResponse.ok) {
-      return new Response(
-        "No pude obtener la lista de chistes.",
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "text/plain; charset=UTF-8",
-            "Cache-Control": "no-store"
-          }
+    const response = await fetch(
+      `${JOKES_URL}?v=${Date.now()}`,
+      {
+        method: "GET",
+        cache: "no-store",
+        headers: {
+          "User-Agent": "Twitch-Jokes-Worker",
+          "Cache-Control": "no-cache"
         }
+      }
+    );
+
+    if (!response.ok) {
+      return errorResponse(
+        `GitHub respondió con HTTP ${response.status}.`
       );
     }
 
-    // ------------------------------------------------------------
-    // Convertir respuesta a JSON
-    // ------------------------------------------------------------
-    const data = await githubResponse.json();
+    const data = await response.json();
 
-    // ------------------------------------------------------------
-    // Validar estructura
-    // ------------------------------------------------------------
+    // ============================================================
+    // El archivo debe tener:
+    //
+    // {
+    //   "chistes": [...]
+    // }
+    // ============================================================
+
     if (
+      !data ||
       typeof data !== "object" ||
-      data === null ||
-      Array.isArray(data) ||
       !Array.isArray(data.chistes)
     ) {
-      return new Response(
-        "El formato de chistes.json no es válido.",
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "text/plain; charset=UTF-8",
-            "Cache-Control": "no-store"
-          }
-        }
+      return errorResponse(
+        "chistes.json no tiene el formato esperado: { \"chistes\": [...] }"
       );
     }
 
-    // ------------------------------------------------------------
-    // Filtrar valores inválidos
-    // ------------------------------------------------------------
+    // ============================================================
+    // Filtrar entradas inválidas
+    // ============================================================
+
     const jokes = data.chistes.filter(
-      joke => typeof joke === "string" && joke.trim().length > 0
+      joke =>
+        typeof joke === "string" &&
+        joke.trim().length > 0
     );
 
     if (jokes.length === 0) {
-      return new Response(
-        "No hay chistes disponibles.",
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "text/plain; charset=UTF-8",
-            "Cache-Control": "no-store"
-          }
-        }
+      return errorResponse(
+        "No hay chistes disponibles en chistes.json."
       );
     }
 
-    // ------------------------------------------------------------
+    // ============================================================
     // Elegir chiste aleatorio
-    // ------------------------------------------------------------
+    // ============================================================
+
     const randomIndex =
       Math.floor(Math.random() * jokes.length);
 
     const joke = jokes[randomIndex];
 
-    // ------------------------------------------------------------
-    // Devolver chiste
-    // ------------------------------------------------------------
+    // ============================================================
+    // Respuesta
+    // ============================================================
+
     return new Response(
       `😂 ${joke}`,
       {
@@ -121,10 +102,9 @@ async function getRandomJoke() {
         headers: {
           "Content-Type": "text/plain; charset=UTF-8",
 
-          // Evitar completamente que se almacene
-          // la respuesta aleatoria.
+          // Nunca almacenar el resultado aleatorio.
           "Cache-Control":
-            "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+            "no-store, no-cache, must-revalidate, max-age=0",
           "CDN-Cache-Control": "no-store",
           "Pragma": "no-cache",
           "Expires": "0",
@@ -135,15 +115,22 @@ async function getRandomJoke() {
     );
 
   } catch (error) {
-    return new Response(
-      `Error interno: ${error.message}`,
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "text/plain; charset=UTF-8",
-          "Cache-Control": "no-store"
-        }
-      }
+    return errorResponse(
+      `Error interno: ${error.message}`
     );
   }
+}
+
+function errorResponse(message) {
+  return new Response(
+    `❌ ${message}`,
+    {
+      status: 500,
+      headers: {
+        "Content-Type": "text/plain; charset=UTF-8",
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "CDN-Cache-Control": "no-store"
+      }
+    }
+  );
 }
