@@ -1,17 +1,13 @@
 {
-  "normal": [
+  "chistes": [
     "¿Qué le dijo un techo a otro techo? Techo de menos.",
     "¿Qué hace una abeja en el gimnasio? ¡Zum-ba!",
-    "¿Cuál es el café más peligroso? El ex-preso."
-  ],
+    "¿Cuál es el café más peligroso? El ex-preso.",
 
-  "malo": [
     "¿Qué hace una vaca cuando sale el sol? Sombra.",
     "¿Qué le dijo un 0 a un 8? Bonito cinturón.",
-    "¿Cómo se llama un boomerang que no vuelve? Palo."
-  ],
+    "¿Cómo se llama un boomerang que no vuelve? Palo.",
 
-  "dark": [
     "¿Qué es una mujer de color embarazada? Un Kinder Sorpresa.",
     "—Mamá, ¿mi abuelo es mecánico? —No, ¿por qué? —Es que lo vi debajo de un camión.",
     "¿En dónde va a pasar la noche una niña palestina? En todas partes.",
@@ -21,13 +17,11 @@
     "¿En qué se parecen una bici y un negro? Que ninguno funciona sin cadenas.",
     "¿Saben qué es peor que siete niños colgados de un árbol? Un niño colgado de siete árboles.",
     "¿Sabes cómo es un exorcismo a la inversa? Cuando el demonio le pide al cura que salga del niño.",
-    "¿En qué se diferencia una galleta de un judío? En que la galleta no grita cuando la metes al horno."
-  ],
+    "¿En qué se diferencia una galleta de un judío? En que la galleta no grita cuando la metes al horno.",
 
-  "animales": [
     "¿Por qué las focas miran siempre hacia arriba? ¡Porque ahí están los focos!",
     "¿Qué le dice un gusano a otro gusano? Voy a dar una vuelta a la manzana.",
-    "Un gato empieza a ladrar en el tejado de una casa. Otro gato, sorprendido, le dice: Estás loco gato, ¿por qué ladras en vez de maullar? El gatito le responde: ¿A caso no puedo aprender otro idioma?",
+    "Un gato empieza a ladrar en el tejado de una casa. Otro gato, sorprendido, le dice: Estás loco gato, ¿por qué ladras en vez de maullar? El gatito le responde: ¿Acaso no puedo aprender otro idioma?",
     "¿Cuál es el último animal que subió al arca de Noé? El del-fin.",
     "Un pez le pregunta a otro pez: ¿qué hace tu mamá? Este le contesta: Nada, ¿y la tuya qué hace? Nada también.",
     "Si se muere una pulga, ¿a dónde va? Al pulgatorio.",
@@ -70,16 +64,12 @@
     "¡Me acaba de picar una serpiente! ¿Cobra? No, gratis.",
     "¿Por qué los patos no tienen amigos? Porque son muy antipáticos.",
     "¿Cuál es el nombre del pez que cae de un cuarto piso? Aaaaaaaaaaaaaaaaaahhhhhh... ¡tún!",
-    "Un erizo iba en el desierto y ve un cactus y le dice: ¡Mamá!"
-  ],
+    "Un erizo iba en el desierto y ve un cactus y le dice: ¡Mamá!",
 
-  "gaming": [
     "¿Por qué el jugador llevó una escalera al servidor? Porque quería subir de nivel.",
     "Mi PC no tiene problemas de FPS... tiene problemas de FPM: frames por minuto.",
-    "¿Cuál es el juego favorito de los electricistas? Minecraft, por los creepers."
-  ],
+    "¿Cuál es el juego favorito de los electricistas? Minecraft, por los creepers.",
 
-  "anime": [
     "¿Cuál es el anime favorito de los programadores? Code Geass.",
     "¿Por qué el protagonista de anime nunca llega tarde? Porque tiene plot armor.",
     "¿Qué hace un personaje de anime cuando pierde? Grita su ataque especial."
