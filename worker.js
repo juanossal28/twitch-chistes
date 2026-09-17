@@ -7,20 +7,14 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // /chiste
-    // Elige aleatoriamente una categoría y después un chiste.
     if (url.pathname === "/chiste") {
       return await getRandomJoke();
     }
 
-    // /chiste/buenos
-    // Solo chistes de la categoría "normal".
     if (url.pathname === "/chiste/buenos") {
       return await getRandomJoke("normal");
     }
 
-    // /chiste/malos
-    // Solo chistes de la categoría "malo".
     if (url.pathname === "/chiste/malos") {
       return await getRandomJoke("malo");
     }
@@ -38,24 +32,60 @@ export default {
 };
 
 async function getRandomJoke(category = null) {
-  const cache = caches.default;
+  try {
+    const cache = caches.default;
 
-  const cacheKey = new Request(JOKES_URL, {
-    method: "GET"
-  });
-
-  let response = await cache.match(cacheKey);
-
-  if (!response) {
-    response = await fetch(JOKES_URL, {
-      headers: {
-        "User-Agent": "Twitch-Jokes-Worker"
+    // Usamos una URL propia como clave de caché.
+    const cacheKey = new Request(
+      "https://twitch-chistes-cache.local/chistes.json",
+      {
+        method: "GET"
       }
-    });
+    );
 
-    if (!response.ok) {
+    let response = await cache.match(cacheKey);
+
+    if (!response) {
+      const githubResponse = await fetch(JOKES_URL, {
+        headers: {
+          "User-Agent": "Twitch-Jokes-Worker"
+        }
+      });
+
+      if (!githubResponse.ok) {
+        return new Response(
+          "No pude obtener la lista de chistes.",
+          {
+            status: 500,
+            headers: {
+              "Content-Type": "text/plain; charset=UTF-8"
+            }
+          }
+        );
+      }
+
+      const text = await githubResponse.text();
+
+      response = new Response(text, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json; charset=UTF-8",
+          "Cache-Control": `public, max-age=${CACHE_SECONDS}`
+        }
+      });
+
+      ctx.waitUntil(cache.put(cacheKey, response.clone()));
+    }
+
+    const jokes = await response.json();
+
+    if (
+      typeof jokes !== "object" ||
+      jokes === null ||
+      Array.isArray(jokes)
+    ) {
       return new Response(
-        "No pude obtener la lista de chistes.",
+        "El formato de chistes.json no es válido.",
         {
           status: 500,
           headers: {
@@ -65,26 +95,67 @@ async function getRandomJoke(category = null) {
       );
     }
 
-    response = new Response(await response.text(), response);
+    let selectedCategory;
 
-    response.headers.set(
-      "Cache-Control",
-      `public, max-age=${CACHE_SECONDS}`
-    );
+    if (category) {
+      if (
+        !Array.isArray(jokes[category]) ||
+        jokes[category].length === 0
+      ) {
+        return new Response(
+          `No hay chistes disponibles para la categoría "${category}".`,
+          {
+            status: 404,
+            headers: {
+              "Content-Type": "text/plain; charset=UTF-8"
+            }
+          }
+        );
+      }
 
-    await cache.put(cacheKey, response.clone());
-  }
+      selectedCategory = category;
+    } else {
+      const categories = Object.keys(jokes).filter(
+        categoryName =>
+          Array.isArray(jokes[categoryName]) &&
+          jokes[categoryName].length > 0
+      );
 
-  const jokes = await response.json();
+      if (categories.length === 0) {
+        return new Response(
+          "No hay categorías con chistes disponibles.",
+          {
+            status: 500,
+            headers: {
+              "Content-Type": "text/plain; charset=UTF-8"
+            }
+          }
+        );
+      }
 
-  // Verificamos que el JSON sea un objeto válido.
-  if (
-    typeof jokes !== "object" ||
-    jokes === null ||
-    Array.isArray(jokes)
-  ) {
+      selectedCategory =
+        categories[Math.floor(Math.random() * categories.length)];
+    }
+
+    const categoryJokes = jokes[selectedCategory];
+
+    const joke =
+      categoryJokes[
+        Math.floor(Math.random() * categoryJokes.length)
+      ];
+
+    return new Response(`😂 ${joke}`, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/plain; charset=UTF-8",
+        "Cache-Control": "no-store",
+        "Access-Control-Allow-Origin": "*"
+      }
+    });
+
+  } catch (error) {
     return new Response(
-      "El formato de chistes.json no es válido.",
+      `Error interno: ${error.message}`,
       {
         status: 500,
         headers: {
@@ -93,77 +164,4 @@ async function getRandomJoke(category = null) {
       }
     );
   }
-
-  let selectedCategory;
-
-  // ============================================================
-  // Si se especificó una categoría:
-  // /chiste/buenos -> "normal"
-  // /chiste/malos  -> "malo"
-  // ============================================================
-  if (category) {
-    if (!Array.isArray(jokes[category]) || jokes[category].length === 0) {
-      return new Response(
-        `No hay chistes disponibles para la categoría "${category}".`,
-        {
-          status: 404,
-          headers: {
-            "Content-Type": "text/plain; charset=UTF-8"
-          }
-        }
-      );
-    }
-
-    selectedCategory = category;
-  }
-
-  // ============================================================
-  // Si NO se especificó categoría:
-  // /chiste
-  //
-  // Obtenemos todas las categorías disponibles y elegimos una
-  // al azar.
-  // ============================================================
-  else {
-    const categories = Object.keys(jokes).filter(
-      categoryName =>
-        Array.isArray(jokes[categoryName]) &&
-        jokes[categoryName].length > 0
-    );
-
-    if (categories.length === 0) {
-      return new Response(
-        "No hay categorías con chistes disponibles.",
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "text/plain; charset=UTF-8"
-          }
-        }
-      );
-    }
-
-    selectedCategory =
-      categories[Math.floor(Math.random() * categories.length)];
-  }
-
-  // Obtener los chistes de la categoría elegida.
-  const categoryJokes = jokes[selectedCategory];
-
-  // Elegir un chiste al azar.
-  const joke =
-    categoryJokes[
-      Math.floor(Math.random() * categoryJokes.length)
-    ];
-
-  return new Response(
-    `😂 ${joke}`,
-    {
-      status: 200,
-      headers: {
-        "Content-Type": "text/plain; charset=UTF-8",
-        "Cache-Control": "no-store"
-      }
-    }
-  );
 }
