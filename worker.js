@@ -4,27 +4,35 @@ const JOKES_URL =
 const CACHE_SECONDS = 60;
 
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request) {
     const url = new URL(request.url);
 
+    // /chiste
+    // Elige aleatoriamente una categoría y después un chiste.
     if (url.pathname === "/chiste") {
       return await getRandomJoke();
     }
 
+    // /chiste/buenos
+    // Solo chistes de la categoría "normal".
     if (url.pathname === "/chiste/buenos") {
       return await getRandomJoke("normal");
     }
 
+    // /chiste/malos
+    // Solo chistes de la categoría "malo".
     if (url.pathname === "/chiste/malos") {
       return await getRandomJoke("malo");
     }
 
+    // Respuesta para cualquier otra ruta.
     return new Response(
       "API de chistes de Twitch funcionando correctamente.",
       {
         status: 200,
         headers: {
-          "Content-Type": "text/plain; charset=UTF-8"
+          "Content-Type": "text/plain; charset=UTF-8",
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"
         }
       }
     );
@@ -35,7 +43,10 @@ async function getRandomJoke(category = null) {
   try {
     const cache = caches.default;
 
-    // Usamos una URL propia como clave de caché.
+    // ------------------------------------------------------------
+    // CACHEAMOS SOLAMENTE EL JSON DE GITHUB.
+    // NO CACHEAMOS EL RESULTADO ALEATORIO.
+    // ------------------------------------------------------------
     const cacheKey = new Request(
       "https://twitch-chistes-cache.local/chistes.json",
       {
@@ -47,6 +58,7 @@ async function getRandomJoke(category = null) {
 
     if (!response) {
       const githubResponse = await fetch(JOKES_URL, {
+        method: "GET",
         headers: {
           "User-Agent": "Twitch-Jokes-Worker"
         }
@@ -58,15 +70,16 @@ async function getRandomJoke(category = null) {
           {
             status: 500,
             headers: {
-              "Content-Type": "text/plain; charset=UTF-8"
+              "Content-Type": "text/plain; charset=UTF-8",
+              "Cache-Control": "no-store"
             }
           }
         );
       }
 
-      const text = await githubResponse.text();
+      const jsonText = await githubResponse.text();
 
-      response = new Response(text, {
+      response = new Response(jsonText, {
         status: 200,
         headers: {
           "Content-Type": "application/json; charset=UTF-8",
@@ -74,9 +87,13 @@ async function getRandomJoke(category = null) {
         }
       });
 
-      ctx.waitUntil(cache.put(cacheKey, response.clone()));
+      // Guardamos solamente chistes.json en caché.
+      await cache.put(cacheKey, response.clone());
     }
 
+    // ------------------------------------------------------------
+    // LEER Y VALIDAR JSON
+    // ------------------------------------------------------------
     const jokes = await response.json();
 
     if (
@@ -89,15 +106,23 @@ async function getRandomJoke(category = null) {
         {
           status: 500,
           headers: {
-            "Content-Type": "text/plain; charset=UTF-8"
+            "Content-Type": "text/plain; charset=UTF-8",
+            "Cache-Control": "no-store"
           }
         }
       );
     }
 
+    // ------------------------------------------------------------
+    // SELECCIONAR CATEGORÍA
+    // ------------------------------------------------------------
     let selectedCategory;
 
-    if (category) {
+    if (category !== null) {
+      // Endpoint específico:
+      // /chiste/buenos -> normal
+      // /chiste/malos  -> malo
+
       if (
         !Array.isArray(jokes[category]) ||
         jokes[category].length === 0
@@ -107,14 +132,21 @@ async function getRandomJoke(category = null) {
           {
             status: 404,
             headers: {
-              "Content-Type": "text/plain; charset=UTF-8"
+              "Content-Type": "text/plain; charset=UTF-8",
+              "Cache-Control": "no-store"
             }
           }
         );
       }
 
       selectedCategory = category;
+
     } else {
+      // ----------------------------------------------------------
+      // /chiste
+      //
+      // Obtener todas las categorías que tengan chistes.
+      // ----------------------------------------------------------
       const categories = Object.keys(jokes).filter(
         categoryName =>
           Array.isArray(jokes[categoryName]) &&
@@ -127,16 +159,23 @@ async function getRandomJoke(category = null) {
           {
             status: 500,
             headers: {
-              "Content-Type": "text/plain; charset=UTF-8"
+              "Content-Type": "text/plain; charset=UTF-8",
+              "Cache-Control": "no-store"
             }
           }
         );
       }
 
+      // Elegir categoría al azar.
       selectedCategory =
-        categories[Math.floor(Math.random() * categories.length)];
+        categories[
+          Math.floor(Math.random() * categories.length)
+        ];
     }
 
+    // ------------------------------------------------------------
+    // ELEGIR CHISTE
+    // ------------------------------------------------------------
     const categoryJokes = jokes[selectedCategory];
 
     const joke =
@@ -144,22 +183,40 @@ async function getRandomJoke(category = null) {
         Math.floor(Math.random() * categoryJokes.length)
       ];
 
-    return new Response(`😂 ${joke}`, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/plain; charset=UTF-8",
-        "Cache-Control": "no-store",
-        "Access-Control-Allow-Origin": "*"
+    // ------------------------------------------------------------
+    // RESPUESTA FINAL
+    //
+    // IMPORTANTÍSIMO:
+    // Esta respuesta NO debe quedar cacheada.
+    // ------------------------------------------------------------
+    return new Response(
+      `😂 ${joke}`,
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain; charset=UTF-8",
+
+          // Evitar caché del resultado aleatorio.
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          "CDN-Cache-Control": "no-store",
+          "Pragma": "no-cache",
+          "Expires": "0",
+
+          // Por si algún cliente solicita CORS.
+          "Access-Control-Allow-Origin": "*"
+        }
       }
-    });
+    );
 
   } catch (error) {
     return new Response(
-      `Error interno: ${error.message}`,
+      `Error interno del servidor: ${error.message}`,
       {
         status: 500,
         headers: {
-          "Content-Type": "text/plain; charset=UTF-8"
+          "Content-Type": "text/plain; charset=UTF-8",
+          "Cache-Control": "no-store"
         }
       }
     );
